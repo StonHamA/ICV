@@ -1,22 +1,28 @@
-%% video in 
+% script written by Jingxiong Li 180770429
+% this script is for coursework 4)
+%% video input and initiallize
 [frames, frameCount, videoHeight, videoWidth] = video2frames('NewDatasetC.avi');
-%SWsz - MBsz必须是偶数
-MBsz = 16;
-SWsz = 20;
-detectFtrame = 47;
+%MBsz is MatchingBlock Size, SWsz is SearchWindow Size.
+%SWsz - MBsz must be an even number
+MBsz = 8;
+SWsz = 32;
+%input the frame number
+detectFtrame = 25;
 center = (SWsz - MBsz) / 2;
 
-%% 抽出部分
 singleFrame1 = frames(detectFtrame).cdata;
 singleFrame2 = frames(detectFtrame + 1).cdata;
+
+% gray picrute convertion
 singleFrameGrey1 = c2g(videoHeight, videoWidth, frames(detectFtrame).cdata); 
 singleFrameGreyC = c2g(videoHeight, videoWidth, frames(detectFtrame + 1).cdata);
-
-%所有坐标都化成绝对坐标再进行存储
-%定义Matchingblock, 将图片分成若干小块
+%Cut the frame into matching blocks
+%matchingBlocks are in 'matchingblocks.data'
 matchingBlock = frameCut(videoHeight, videoWidth, MBsz, singleFrameGrey1); 
 
-%% searching blockmatch
+%% blockmatch
+
+% enlarge the picture pad to process all the pixels
 singleFrameGrey2 = zeros(videoHeight + 2 * SWsz ,videoWidth + 2 * SWsz);
 singleFrameGrey2(SWsz + 1 : videoHeight + SWsz , SWsz + 1: videoWidth + SWsz) = singleFrameGreyC;
 
@@ -33,27 +39,43 @@ for i = 1 : MBsz :  videoHeight
         b = (j-1)/MBsz + 1;        
     
         [minMSE,MBx,MBy] = blockMatch(matchingBlock(a,b).data, SWx, SWy, SWsz, singleFrameGrey2);
-        matchingBlock(a, b).mbXY = [MBx, MBy];
-        
-%         %相对坐标还原 相对坐标+绝对坐标原点
-%         realX = SWsz + 1+MBsz*(a-1)+(MBx-center);
-%         realY = SWsz + 1+MBsz*(b-1)+(MBy-center);       
-%         matchingBlock(a, b).realMBXY = [realX, realY]; %这个是绝对坐标
-%         matchingBlock(a, b).MSE = minMSE;
-
+        % mbXY stores the end point  of motion vectors
+        matchingBlock(a, b).mbXY = [MBx, MBy];        
     end
 end
 
-%% 以及画vector
+%% draw motion vectors
 figure(1);
-drawVector(videoHeight, videoWidth, MBsz, SWsz, matchingBlock, singleFrame1);
+drawVector(videoHeight, videoWidth, MBsz, SWsz, matchingBlock, singleFrame2);
+title('motion vectors')
 figure(2);
-subplot(1,2,1);
+imshow(singleFrame1);
+title('frame It')
+figure(3);
 imshow(singleFrame2);
+title('frame It+1')
 
-%% 预测动态重组图片
-reconstructFrame = reconstruct(videoHeight, videoWidth, MBsz, matchingBlock);
-subplot(1,2,2);
+%% prediction
+%fill the unfilled pixels, if not , set compensate to 0
+compensate = 1;
+reconstructFrame = reconstruct(videoHeight, videoWidth, MBsz, matchingBlock, compensate);
+figure(4);
 imshow(uint8(reconstructFrame));
+title('frame Pt+1')
 
+%% plot the execution time
+figure(5);
+t = [8.425, 2.532, 2.139];
+bar(t);
+title('different time for 16*16 search window')
+xticklabels({'4*4', '8*8', '16*16'});
+xlabel('matching block size')
+ylabel('time')
 
+figure(6);
+t = [3.089, 3.475, 4.116];
+bar(t);
+title('different time for 8*8 matching block')
+xticklabels({'8*8', '16*16', '32*32'});
+xlabel('searching window size')
+ylabel('time')

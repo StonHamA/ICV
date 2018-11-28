@@ -1,5 +1,4 @@
-% function written by Jingxiong Li 180770429
-% this function is used to convert video sequence to frames 
+
 function [frames, frameCount, videoHeight, videoWidth] = video2frames(videoIn)
     videoIn = VideoReader(videoIn);
     videoHeight = videoIn.Height;

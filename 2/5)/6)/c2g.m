@@ -1,6 +1,3 @@
-% function written by Jingxiong Li 180770429
-% this function is used to figure out coursework 4),
-%convert colour picture to black and white.
 function gray = c2g(videoHeight, videoWidth, frame)
 frame = double(frame);
 gray = zeros(videoHeight, videoWidth);
